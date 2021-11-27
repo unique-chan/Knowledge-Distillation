@@ -71,7 +71,7 @@ class Iterator:
                           f"(top5) {meter['top5_acc'].avg * 100.: .3f}% "
 
             if bool_tqdm:
-                tqdm_loader.set_description(f'{mode} | {msg} | {log_msg}')
+                tqdm_loader.set_description(f'{mode.upper()} | {msg} | {log_msg}')
 
             predictions.extend(torch.flatten(prediction).tolist())  # accumulate the prediction results
         return meter['loss'].avg, meter['top1_acc'].avg * 100., meter['top5_acc'].avg * 100., predictions
