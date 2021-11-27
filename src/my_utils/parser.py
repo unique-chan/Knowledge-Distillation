@@ -36,6 +36,7 @@ class Parser:
                                  help='learning rate step decay gamma (default: 0.1)')
         self.parser.add_argument('--store', action='store_true',
                                  help='store the best model during training')
+        self.parser.add_argument('--tag', type=str, help='tag name for current experiment')
 
     def add_arguments_for_test(self):
         pass
