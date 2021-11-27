@@ -1,5 +1,8 @@
 import torchvision.transforms as transforms
 import torch.optim as optim
+import sys
+
+sys.path.append('src')  # Do not remove this code!
 
 
 def get_manual_transform_list(mode, transform_list_name, mean, std):
