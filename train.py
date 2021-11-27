@@ -1,6 +1,6 @@
 from src.my_utils import parser
-from src.__init__ import *
-from src import loader, model, iterator, util
+from __init__ import *
+from src import loader, model, iterator
 from warnings import filterwarnings
 
 
@@ -29,9 +29,11 @@ if __name__ == '__main__':
     my_optimizer = get_optimizer(my_model, my_args.lr)                                          # see '__init__.py'
     my_lr_scheduler = get_lr_scheduler(my_optimizer, my_args.lr_step, my_args.lr_step_gamma)    # see '__init__.py'
     my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, device=my_device)
+    my_iterator.set_loader('train', my_train_loader)
+    my_iterator.set_loader('valid', my_valid_loader)
 
     # Train and valid
     for cur_epoch in range(0, my_args.epochs):
-        msg = f'Epoch {cur_epoch:5d}'
+        msg = f'Epoch {cur_epoch+1:5d}'
         my_iterator.train(msg=msg)
         my_iterator.valid(msg=msg)
