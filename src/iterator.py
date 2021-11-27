@@ -10,7 +10,8 @@ except ImportError:
 
 
 class Iterator:
-    def __init__(self, model, optimizer, lr_scheduler, num_classes, device='cpu'):
+    def __init__(self, model, optimizer, lr_scheduler, num_classes,
+                 device='cpu', store=False):
         self.model = model
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
@@ -25,6 +26,8 @@ class Iterator:
         self.log_top1_acc = {'train': [], 'valid': []}
         self.log_top5_acc = {'train': [], 'valid': []}
         self.log_predictions = {'train': [], 'valid': [], 'test': []}
+
+        self.best_model_state_dict = self.model.state_dict() if store else None
 
     @classmethod
     def __get_final_prediction_and_topk_acc__(cls, out, gt, top_k=(1, 5)):
@@ -94,6 +97,8 @@ class Iterator:
         self.model.eval()
         with torch.no_grad():
             loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, msg=msg)
+            if top1_acc > max(self.log_top1_acc['train']):
+                self.best_model_state_dict = self.model.state_dict()  # store best model
             self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
 
     def test(self):
