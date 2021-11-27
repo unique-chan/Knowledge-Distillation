@@ -16,6 +16,7 @@ class Iterator:
         self.lr_scheduler = lr_scheduler
         self.num_classes = num_classes
         self.device = device  # 'cpu', 'cuda:0', ...
+        self.model.to(device)
 
         self.criterion = nn.CrossEntropyLoss()
         self.loader = {'train': None, 'valid': None, 'test': None}
@@ -57,8 +58,8 @@ class Iterator:
             if mode in ['train', 'valid']:
                 loss = self.criterion(output_distributions, y)
                 meter['loss'].update(loss.item(), k=output_distributions.size(0))
-                log_msg = f"Loss: {meter['loss'].avg: .3f} | Acc: (top1) {meter['top1_acc'].avg * 100.: .3f}%% " \
-                          f"(top5) {meter['top5_acc'].avg * 100.: .3f}%% "
+                log_msg = f"Loss: {meter['loss'].avg: .3f} | Acc: (top1) {meter['top1_acc'].avg * 100.: .3f}% " \
+                          f"(top5) {meter['top5_acc'].avg * 100.: .3f}% "
                 # update
                 if mode == 'train':
                     self.optimizer.zero_grad()
@@ -66,8 +67,8 @@ class Iterator:
                     self.optimizer.step()
                     self.lr_scheduler.step()
             else:
-                log_msg = f"Acc: (top1) {meter['top1_acc'].avg * 100.: .3f}%% " \
-                          f"(top5) {meter['top5_acc'].avg * 100.: .3f}%% "
+                log_msg = f"Acc: (top1) {meter['top1_acc'].avg * 100.: .3f}% " \
+                          f"(top5) {meter['top5_acc'].avg * 100.: .3f}% "
 
             if bool_tqdm:
                 tqdm_loader.set_description(f'{mode} | {msg} | {log_msg}')
