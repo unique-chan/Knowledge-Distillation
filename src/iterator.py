@@ -1,12 +1,20 @@
 import torch
 import torch.nn as nn
 import util
+
 try:
     bool_tqdm = True
     import tqdm
 except ImportError:
     bool_tqdm = False
     print('[Warning] Try to install tqdm for progress bar.')
+
+try:
+    bool_tb = True
+    import tensorboard
+except ImportError:
+    bool_tb = False
+    print('[Warning] Try to install tensorboard for checking the status of learning.')
 
 
 class Iterator:
