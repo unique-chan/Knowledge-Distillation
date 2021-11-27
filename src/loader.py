@@ -7,7 +7,7 @@ from __init__ import *
 
 
 class Loader:
-    mean_pkl, std_pkl = 'mean.skl', 'std.pkl'
+    mean_pkl, std_pkl = 'mean.pkl', 'std.pkl'
 
     def __init__(self, dataset_path, batch_size=1,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
