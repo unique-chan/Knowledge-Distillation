@@ -12,8 +12,7 @@ class Loader:
     def __init__(self, dataset_path, batch_size=1,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
                  compute_mean_std=False,
-                 train_transform_list_name=None,
-                 eval_transform_list_name=None):
+                 transform_list_name=''):
         self.dataset_path = dataset_path
         self.dataset_dir = self.__get_dataset_dir()
         self.classes = self.__get_classes()
@@ -22,8 +21,8 @@ class Loader:
         self.mean, self.std = mean, std
         if compute_mean_std:
             self.mean, self.std = self.__get_train_mean_std()
-        train_transform_list = get_manual_transform_list('train', train_transform_list_name, self.mean, self.std)
-        eval_transform_list = get_manual_transform_list('eval', eval_transform_list_name, self.mean, self.std)
+        train_transform_list = get_manual_transform_list('train', transform_list_name, self.mean, self.std)
+        eval_transform_list = get_manual_transform_list('eval', transform_list_name, self.mean, self.std)
         self.transform_dir = {'train': train_transform_list,
                               'valid': eval_transform_list,
                               'test': eval_transform_list}
