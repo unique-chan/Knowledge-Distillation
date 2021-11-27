@@ -73,4 +73,3 @@ class Loader:
         dataset = datasets.ImageFolder(root=self.dataset_dir[mode],
                                        transform=transforms.Compose(self.transform_dir[mode]))
         return data.DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
-
