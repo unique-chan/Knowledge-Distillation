@@ -25,10 +25,10 @@ if __name__ == '__main__':
 
     # Initialization
     my_model = model.model(my_args.network_name, my_loader.num_classes, pretrained=False)
-    device = 'cpu' if my_args.gpu_index == -1 else f'cuda:{my_args.gpu_index}'
-    optimizer = get_optimizer()             # see '__init__.py'
-    lr_scheduler = get_lr_scheduler()       # see '__init__.py'
-    my_iterator = iterator.Iterator(my_model, optimizer, lr_scheduler, my_loader.num_classes, device=device)
+    my_device = 'cpu' if my_args.gpu_index == -1 else f'cuda:{my_args.gpu_index}'
+    my_optimizer = get_optimizer(my_model, my_args.lr)                                          # see '__init__.py'
+    my_lr_scheduler = get_lr_scheduler(my_optimizer, my_args.lr_step, my_args.lr_step_gamma)    # see '__init__.py'
+    my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, device=my_device)
 
     # Train and valid
     for cur_epoch in range(0, my_args.epochs):
