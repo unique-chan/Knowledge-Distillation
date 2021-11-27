@@ -21,6 +21,7 @@ class Loader:
         self.mean, self.std = mean, std
         if compute_mean_std:
             self.mean, self.std = self.__get_train_mean_std()
+        # see '__init__.py' for transform_list!
         train_transform_list = get_manual_transform_list('train', transform_list_name, self.mean, self.std)
         eval_transform_list = get_manual_transform_list('eval', transform_list_name, self.mean, self.std)
         self.transform_dir = {'train': train_transform_list,
