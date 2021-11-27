@@ -34,6 +34,8 @@ class Parser:
                                  help='learning rate step decay milestones (default: "[100, 150]")')
         self.parser.add_argument('--lr_step_gamma', default=0.1, type=float,
                                  help='learning rate step decay gamma (default: 0.1)')
+        self.parser.add_argument('--store', action='store_true',
+                                 help='store the best model during training')
 
     def add_arguments_for_test(self):
         pass
