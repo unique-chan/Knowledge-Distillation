@@ -47,3 +47,4 @@ if __name__ == '__main__':
 
     if my_iterator.best_model_state_dict:
         torch.save(my_iterator.best_model_state_dict, f'{tag_name}.pt')
+        print(f'{tag_name}.pt is stored.')
