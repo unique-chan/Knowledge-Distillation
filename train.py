@@ -20,6 +20,7 @@ if __name__ == '__main__':
     # Tag
     cur_time = datetime.datetime.now().strftime('%y-%m-%d-%H-%M-%S')
     tag_name = f'{my_args.tag}-{cur_time}' if my_args.tag else f'{cur_time}'
+    print(f'{tag_name} experiment has been started.')
 
     # Loader (Train / Valid)
     my_loader = loader.Loader(my_args.dataset_dir, my_args.batch_size,
