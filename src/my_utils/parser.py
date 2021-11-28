@@ -18,9 +18,9 @@ class Parser:
                                  help='train mean (default: "(0.485, 0.456, 0.456)")')
         self.parser.add_argument('--std', default="(0.229, 0.224, 0.225)", type=str,
                                  help='train std (default: "(0.229, 0.224, 0.225)")')
-        self.parser.add_argument('--compute_mean_std', action='store_true',
+        self.parser.add_argument('--auto_mean_std', action='store_true',
                                  help='Compute and use train mean/std.'
-                                      ' (instead of set values of [--mean] and [--std])')
+                                      ' (instead of setting values of [--mean] and [--std])')
         self.parser.add_argument('--transform_list_name', default='', type=str,
                                  help='if you want to use your own transform list, set this value. '
                                       '(See __init__.py and README.md)')

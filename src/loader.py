@@ -11,7 +11,7 @@ class Loader:
 
     def __init__(self, dataset_path, batch_size=1,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
-                 compute_mean_std=False,
+                 auto_mean_std=False,
                  transform_list_name=''):
         self.dataset_path = dataset_path
         self.dataset_dir = self.__get_dataset_dir()
@@ -19,7 +19,7 @@ class Loader:
         self.num_classes = len(self.classes)
         self.batch_size = batch_size
         self.mean, self.std = mean, std
-        if compute_mean_std:
+        if auto_mean_std:
             self.mean, self.std = self.__get_train_mean_std()
         # see '__init__.py' for transform_list!
         train_transform_list = get_manual_transform_list('train', transform_list_name, self.mean, self.std)

@@ -25,8 +25,8 @@ if __name__ == '__main__':
     # Loader (Train / Valid)
     my_loader = loader.Loader(my_args.dataset_dir, my_args.batch_size,
                               my_args.mean, my_args.std,
-                              my_args.compute_mean_std,  # if my_args.compute_mean_std is True,
-                                                         # my_args.mean, my_args.std become ignored.
+                              my_args.auto_mean_std,  # if my_args.auto_mean_std is True,
+                                                      # my_args.mean, my_args.std become ignored.
                               my_args.transform_list_name)
     my_train_loader = my_loader.get_loader(mode='train', shuffle=True)
     my_valid_loader = my_loader.get_loader(mode='valid', shuffle=False)
