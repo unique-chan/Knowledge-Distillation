@@ -1,6 +1,6 @@
 # Knowledge-Distillation
 ## Is it possible to effectively train student models using logits with intervention? (Tentative Title) 
-[Yechan Kim*](https://github.com/unique-chan) and [Jungyun Oh*](https://github.com/Dodant)
+[Yechan Kim*](https://github.com/unique-chan) and [Junggyun Oh*](https://github.com/Dodant)
 (* denotes equal contribution.)
 
 🚧 Under Construction! (Do not fork this repository yet!)
