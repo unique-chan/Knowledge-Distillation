@@ -8,7 +8,6 @@
 - Python3 / Pytorch code for response-based knowledge distillation
 
 
-
 ### Prerequisites
 - See `requirements.txt` for details.
 ~~~ME
@@ -17,6 +16,31 @@ torchvision
 tqdm            # not mandatory
 tensorboard     # not mandatory
 ~~~
+
+
+### How to use
+1. The directory structure of your dataset should be as follows.
+~~~
+|—— 📁 your_own_dataset
+	|—— 📁 train
+		|—— 📁 class_1
+			|—— 🖼️ 1.jpg
+			|—— ...
+		|—— 📁 class_2 
+			|—— 🖼️ ...
+	|—— 📁 valid
+		|—— 📁 class_1
+		|—— 📁 ... 
+	|—— 📁 test
+		|—— 📁 class_1
+		|—— 📁 ... 
+~~~
+
+2. Run **train.py** for training. The below is an example.
+~~~ME
+python train.py --network_name='efficientnet_b0' --dataset_dir='./cifar10' --epochs=1 --lr=0.1 --compute_mean_std --store --tag='yechan-experiment1'
+~~~
+See **src/my_utils/parser.py** for details.
 
 
 ### Contribution
