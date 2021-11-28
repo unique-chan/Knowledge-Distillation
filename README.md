@@ -37,11 +37,10 @@ tensorboard     # not mandatory
 		|—— 📁 ... 
 ~~~
 
-2. Run **train.py** for training. The below is an example.
+2. Run **train.py** for training. The below is an example. See **src/my_utils/parser.py** for details.
 ~~~ME
 python train.py --network_name='efficientnet_b0' --dataset_dir='./cifar10' --epochs=1 --lr=0.1 --compute_mean_std --store --tag='yechan-experiment1'
 ~~~
-See **src/my_utils/parser.py** for details.
 
 
 ### Contribution
