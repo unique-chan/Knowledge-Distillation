@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     # Train and valid
     for cur_epoch in range(0, my_args.epochs):
-        msg = f'Epoch {cur_epoch+1:5d}'
+        msg = f'Epoch {cur_epoch+1:>5d}'
         my_iterator.train(msg=msg)
         my_iterator.valid(msg=msg)
 
