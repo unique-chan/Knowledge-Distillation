@@ -1,6 +1,6 @@
-from src.my_utils import parser
+from src.my_utils import parser, util
 from __init__ import *
-from src import loader, model, iterator, util
+from src import loader, model, iterator
 from warnings import filterwarnings
 import torch
 import datetime

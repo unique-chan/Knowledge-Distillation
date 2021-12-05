@@ -1,3 +1,4 @@
+import ast
 import os
 import torch
 from torch.utils import data
@@ -18,7 +19,8 @@ class Loader:
         self.classes = self.__get_classes()
         self.num_classes = len(self.classes)
         self.batch_size = batch_size
-        self.mean, self.std = mean, std
+        self.mean = ast.literal_eval(mean) if type(mean) == str else mean
+        self.std = ast.literal_eval(std) if type(std) == str else std
         if auto_mean_std:
             self.mean, self.std = self.__get_train_mean_std()
         # see '__init__.py' for transform_list!
@@ -29,11 +31,12 @@ class Loader:
                               'test': eval_transform_list}
 
     def __get_dataset_dir(self):
-        data_directories = ['train', 'valid', 'test']
+        modes = ['train', 'valid', 'test']
         dataset_dir = {data_directory: os.path.join(self.dataset_path, data_directory)
-                       for data_directory in data_directories
+                       for data_directory in modes
                        if os.path.isdir(os.path.join(self.dataset_path, data_directory))}
-        assert dataset_dir['train']  # 'train' directory must be exist!
+        # 'train' and 'validation' directory must be exist!
+        assert dataset_dir['train'] and dataset_dir['valid']
         return dataset_dir
 
     def __get_classes(self):
