@@ -1,3 +1,4 @@
+import ast
 import os
 import torch
 from torch.utils import data
@@ -18,7 +19,8 @@ class Loader:
         self.classes = self.__get_classes()
         self.num_classes = len(self.classes)
         self.batch_size = batch_size
-        self.mean, self.std = mean, std
+        self.mean = ast.literal_eval(mean) if type(mean) == str else mean
+        self.std = ast.literal_eval(std) if type(std) == str else std
         if auto_mean_std:
             self.mean, self.std = self.__get_train_mean_std()
         # see '__init__.py' for transform_list!
