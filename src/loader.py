@@ -31,11 +31,12 @@ class Loader:
                               'test': eval_transform_list}
 
     def __get_dataset_dir(self):
-        data_directories = ['train', 'valid', 'test']
+        modes = ['train', 'valid', 'test']
         dataset_dir = {data_directory: os.path.join(self.dataset_path, data_directory)
-                       for data_directory in data_directories
+                       for data_directory in modes
                        if os.path.isdir(os.path.join(self.dataset_path, data_directory))}
-        assert dataset_dir['train']  # 'train' directory must be exist!
+        # 'train' and 'validation' directory must be exist!
+        assert dataset_dir['train'] and dataset_dir['valid']
         return dataset_dir
 
     def __get_classes(self):
