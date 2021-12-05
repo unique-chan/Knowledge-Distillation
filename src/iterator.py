@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import util
+from src.my_utils import util
 
 try:
     bool_tqdm = True
