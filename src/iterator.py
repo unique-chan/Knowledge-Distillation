@@ -105,9 +105,10 @@ class Iterator:
         self.model.eval()
         with torch.no_grad():
             loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, msg=msg)
-            if top1_acc > max(self.log_top1_acc[mode]) or \
-                    (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
-                self.best_model_state_dict = self.model.state_dict()  # store best model
+            if self.log_top1_acc[mode]:
+                if top1_acc > max(self.log_top1_acc[mode]) or \
+                        (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
+                    self.best_model_state_dict = self.model.state_dict()  # store best model
             self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
 
     def test(self):
