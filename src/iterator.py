@@ -49,8 +49,7 @@ class Iterator:
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
 
-    def one_epoch(self, mode, msg):
-        # msg = f'Epoch {epoch: 5d}'
+    def one_epoch(self, mode, cur_epoch):
         loader = self.loader[mode]
         meter = {'loss': util.Meter(), 'top1_acc': util.Meter(), 'top5_acc': util.Meter()}
         assert loader, f"No loader['{mode}'] exists. Pass the loader to the Iterator via set_loader()."
@@ -82,7 +81,7 @@ class Iterator:
                           f"(top5) {meter['top5_acc'].avg * 100.: .3f}% "
 
             if bool_tqdm:
-                tqdm_loader.set_description(f'{mode.upper()} | {msg} | {log_msg}')
+                tqdm_loader.set_description(f'{mode.upper()} | {cur_epoch+1:>5d} | {log_msg}')
 
             predictions.extend(torch.flatten(prediction).tolist())  # accumulate the prediction results
         return meter['loss'].avg, meter['top1_acc'].avg * 100., meter['top5_acc'].avg * 100., predictions
@@ -93,18 +92,18 @@ class Iterator:
         self.log_top5_acc[mode].append(top5_acc)
         self.log_predictions[mode].append(predictions)
 
-    def train(self, msg):
+    def train(self, cur_epoch):
         mode = 'train'
         self.model.train()
-        loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, msg=msg)
+        loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
         self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
         self.lr_scheduler.step()
 
-    def valid(self, msg):
+    def valid(self, cur_epoch):
         mode = 'valid'
         self.model.eval()
         with torch.no_grad():
-            loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, msg=msg)
+            loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
             self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
             if top1_acc > max(self.log_top1_acc[mode]) or \
                     (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
@@ -114,5 +113,5 @@ class Iterator:
         mode = 'test'
         self.model.eval()
         with torch.no_grad():
-            _, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, msg='-')
+            _, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=-1)
             self.log_predictions[mode].append(predictions)

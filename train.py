@@ -43,9 +43,8 @@ if __name__ == '__main__':
 
     # Train and valid
     for cur_epoch in range(0, my_args.epochs):
-        msg = f'Epoch {cur_epoch+1:>5d}'
-        my_iterator.train(msg=msg)
-        my_iterator.valid(msg=msg)
+        my_iterator.train(cur_epoch=cur_epoch)
+        my_iterator.valid(cur_epoch=cur_epoch)
 
     if my_iterator.best_model_state_dict:
         torch.save(my_iterator.best_model_state_dict, f'{tag_name}.pt')
