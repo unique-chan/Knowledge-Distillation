@@ -1,9 +1,11 @@
 import ast
 import os
+import pickle
+
 import torch
 from torch.utils import data
 from torchvision import datasets
-import pickle
+
 from __init__ import *
 
 
