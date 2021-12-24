@@ -92,9 +92,9 @@ class Iterator:
     def train(self, cur_epoch):
         mode = 'train'
         self.model.train()
-        *log, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
-        self.__state_update(mode, cur_epoch, *log)
-        self.__log_update(mode, *log, predictions)
+        loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
+        self.__state_update(mode, cur_epoch, loss, top1_acc, top5_acc)
+        self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
         self.lr_scheduler.step()
 
     def valid(self, cur_epoch):
@@ -103,10 +103,11 @@ class Iterator:
         with torch.no_grad():
             loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
             self.__state_update(mode, cur_epoch, loss, top1_acc, top5_acc)
+            if self.log_top1_acc[mode]:
+                if top1_acc > max(self.log_top1_acc[mode]) or \
+                        (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
+                    self.best_model_state_dict = self.model.state_dict()  # store best model
             self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
-            if top1_acc > max(self.log_top1_acc[mode]) or \
-                    (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
-                self.best_model_state_dict = self.model.state_dict()  # store best model
 
     def test(self):
         mode = 'test'
