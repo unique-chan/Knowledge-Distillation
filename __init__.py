@@ -4,6 +4,8 @@ import sys
 
 sys.path.append('src')  # Do not remove this code!
 
+LOG_DIR = './logs'       # directory name for storing *.pt & *.csv. (DO NOT INSERT '/' AT THE END OF LINE)
+
 
 def get_manual_transform_list(mode, transform_list_name, mean, std):
     if mode == 'train':

@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from src.my_utils import util
+from __init__ import *
 
 try:
     bool_tqdm = True
@@ -20,8 +21,8 @@ except ImportError:
     bool_tb = False
     print('[Warning] Try to install tensorboard for checking the status of learning.')
 
-fieldnames = ['epoch', 'train_loss', 'valid_loss',
-              'train_top1_acc', 'train_top5_acc', 'valid_top1_acc', 'valid_top5_acc']
+field_names = ['epoch', 'train_loss', 'valid_loss',
+               'train_top1_acc', 'train_top5_acc', 'valid_top1_acc', 'valid_top5_acc']
 
 
 class Iterator:
@@ -34,25 +35,29 @@ class Iterator:
         self.device = device  # 'cpu', 'cuda:0', ...
         self.model.to(device)
 
-        self.tag_name = tag_name
-        self.csv_writer = csv.DictWriter(open(f'{tag_name}.csv', 'w', newline=''), fieldnames=fieldnames)
-        self.csv_writer.writeheader()
-
         self.criterion = nn.CrossEntropyLoss()
         self.loader = {'train': None, 'valid': None, 'test': None}
 
-        self.log_loss = {'train': [], 'valid': []}
-        self.log_top1_acc, self.log_top5_acc = {'train': [], 'valid': []}, {'train': [], 'valid': []}
-        self.log_predictions = {'train': [], 'valid': [], 'test': []}
-
-        self.state = {'epoch': 0,
-                      'train_loss': 0, 'valid_loss': 0,
-                      'train_top1_acc': 0, 'train_top5_acc': 0,
-                      'valid_top1_acc': 0, 'valid_top5_acc': 0}
-
-        self.best_model_state_dict = self.model.state_dict() if store else None
-
-        os.makedirs('logs/', exist_ok=True)
+        self.store = store
+        if store:
+            # tag_name
+            self.tag_name = tag_name
+            # log
+            self.log_loss = {'train': [], 'valid': []}
+            self.log_top1_acc, self.log_top5_acc = {'train': [], 'valid': []}, {'train': [], 'valid': []}
+            self.log_predictions = {'train': [], 'valid': [], 'test': []}
+            # state for current epoch
+            self.state = {field_name: 0 for field_name in field_names}
+            # make dirs
+            os.makedirs(f'{LOG_DIR}', exist_ok=True)
+            os.makedirs(f'{LOG_DIR}/{tag_name}', exist_ok=True)
+            # log for only current experiment (csv)
+            self.csv_path = f'{LOG_DIR}/{tag_name}/{tag_name}.csv'
+            self.csv_writer = csv.DictWriter(open(self.csv_path, 'w', newline=''), fieldnames=field_names)
+            self.csv_writer.writeheader()
+            # best_model_state_dict
+            self.best_model_state_path = f'{LOG_DIR}/{tag_name}/{tag_name}_valid_best.pt'
+            self.best_model_state_dict = self.model.state_dict()
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
@@ -97,26 +102,27 @@ class Iterator:
         mode = 'train'
         self.model.train()
         loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
-        self.__state_update(mode, cur_epoch, loss, top1_acc, top5_acc)
-        self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
         self.lr_scheduler.step()
+        if self.store:
+            self.__state_update(mode, cur_epoch, loss, top1_acc, top5_acc)
+            self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
 
-    def valid(self, cur_epoch, store_csv=True):
+    def valid(self, cur_epoch):
         mode = 'valid'
         self.model.eval()
         with torch.no_grad():
             loss, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=cur_epoch)
-            self.__state_update(mode, cur_epoch, loss, top1_acc, top5_acc)
-            if self.log_top1_acc[mode]:
-                if top1_acc > max(self.log_top1_acc[mode]) or \
-                        (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
-                    self.best_model_state_dict = self.model.state_dict()  # store best model
-            self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
-        # Save state to csv
-        if store_csv:
-            with open(f'{self.tag_name}.csv', 'a') as f:
-                self.csv_writer.writerow(self.state)
-                f.flush()
+            if self.store:
+                self.__state_update(mode, cur_epoch, loss, top1_acc, top5_acc)
+                if self.log_top1_acc[mode]:
+                    if top1_acc > max(self.log_top1_acc[mode]) or \
+                            (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
+                        self.best_model_state_dict = self.model.state_dict()  # store best model
+                self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
+                # Save state to csv
+                with open(self.csv_path, 'a') as f:
+                    self.csv_writer.writerow(self.state)
+                    f.flush()
 
     def test(self):
         mode = 'test'
@@ -126,7 +132,15 @@ class Iterator:
             self.log_predictions[mode].append(predictions)
 
     def store_best_model(self):
-        torch.save(self.best_model_state_dict, f'logs/{self.tag_name}.pt')
+        torch.save(self.best_model_state_dict, self.best_model_state_path)
+
+    def close_for_train_val(self):
+        if self.store:
+            print(f'{self.csv_path} is stored.')
+            self.store_best_model()
+            print(f'{self.best_model_state_path} is stored.')
+        print(f'{self.tag_name} experiment has been done.')
+        del self
 
     @classmethod
     def __get_final_prediction_and_topk_acc__(cls, out, gt, top_k=(1, 5)):
