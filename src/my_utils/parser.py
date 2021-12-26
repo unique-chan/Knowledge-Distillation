@@ -40,7 +40,7 @@ class Parser:
         self.parser.add_argument('--lr_step_gamma', default=0.1, type=float,
                                  help='learning rate step decay gamma (default: 0.1)')
         self.parser.add_argument('--store', action='store_true',
-                                 help='store the best model during training')
+                                 help='store the best model weights (*.pt) and log files (*.csv) during training')
         self.parser.add_argument('--tag', type=str, 
                                  help='tag name for current experiment')
 

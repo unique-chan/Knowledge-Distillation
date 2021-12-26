@@ -1,4 +1,5 @@
 import csv
+import os
 
 import torch
 import torch.nn as nn
@@ -50,6 +51,8 @@ class Iterator:
                       'valid_top1_acc': 0, 'valid_top5_acc': 0}
 
         self.best_model_state_dict = self.model.state_dict() if store else None
+
+        os.makedirs('logs/', exist_ok=True)
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
@@ -121,6 +124,9 @@ class Iterator:
         with torch.no_grad():
             _, top1_acc, top5_acc, predictions = self.one_epoch(mode=mode, cur_epoch=-1)
             self.log_predictions[mode].append(predictions)
+
+    def store_best_model(self):
+        torch.save(self.best_model_state_dict, f'logs/{self.tag_name}.pt')
 
     @classmethod
     def __get_final_prediction_and_topk_acc__(cls, out, gt, top_k=(1, 5)):

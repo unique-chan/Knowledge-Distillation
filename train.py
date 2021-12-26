@@ -46,8 +46,8 @@ if __name__ == '__main__':
     for cur_epoch in range(0, my_args.epochs):
         my_iterator.train(cur_epoch=cur_epoch)
         my_iterator.valid(cur_epoch=cur_epoch, store_csv=True)
-    print(f'{tag_name}.csv is stored.')
 
-    if my_iterator.best_model_state_dict:
-        torch.save(my_iterator.best_model_state_dict, f'{tag_name}.pt')
+    if my_args.store:
+        print(f'{tag_name}.csv is stored.')
+        my_iterator.store_best_model()
         print(f'{tag_name}.pt is stored.')
