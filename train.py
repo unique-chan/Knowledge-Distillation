@@ -45,11 +45,7 @@ if __name__ == '__main__':
     # Train and valid
     for cur_epoch in range(0, my_args.epochs):
         my_iterator.train(cur_epoch=cur_epoch)
-        my_iterator.valid(cur_epoch=cur_epoch)
-        # Save state to csv
-        with open(f'{tag_name}.csv', 'a') as f:
-            my_iterator.csv_writer.writerow(my_iterator.state)
-            f.flush()
+        my_iterator.valid(cur_epoch=cur_epoch, store_csv=True)
     print(f'{tag_name}.csv is stored.')
 
     if my_iterator.best_model_state_dict:

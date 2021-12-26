@@ -33,6 +33,7 @@ class Iterator:
         self.device = device  # 'cpu', 'cuda:0', ...
         self.model.to(device)
 
+        self.tag_name = tag_name
         self.csv_writer = csv.DictWriter(open(f'{tag_name}.csv', 'w', newline=''), fieldnames=fieldnames)
         self.csv_writer.writeheader()
 
@@ -97,7 +98,7 @@ class Iterator:
         self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
         self.lr_scheduler.step()
 
-    def valid(self, cur_epoch):
+    def valid(self, cur_epoch, store_csv=True):
         mode = 'valid'
         self.model.eval()
         with torch.no_grad():
@@ -108,6 +109,11 @@ class Iterator:
                         (top1_acc == max(self.log_top1_acc[mode]) and top5_acc > max(self.log_top5_acc[mode])):
                     self.best_model_state_dict = self.model.state_dict()  # store best model
             self.__log_update(mode, loss, top1_acc, top5_acc, predictions)
+        # Save state to csv
+        if store_csv:
+            with open(f'{self.tag_name}.csv', 'a') as f:
+                self.csv_writer.writerow(self.state)
+                f.flush()
 
     def test(self):
         mode = 'test'
