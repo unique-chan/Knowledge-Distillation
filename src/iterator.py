@@ -52,7 +52,7 @@ class Iterator:
             # [GOAL] store train/valid loss & acc per each epoch during training.
             self.loss_acc_state = {field_name: 0 for field_name in LOSS_ACC_STATE_FIELDS}
             self.log_loss_acc_csv_path = f'{LOG_DIR}/{tag_name}/{tag_name}.csv'
-            self.log_loss_acc_csv_writer = csv.DictWriter(open(self.log_loss_acc_csv_path, 'w', newline=''),
+            self.log_loss_acc_csv_writer = csv.DictWriter(open(self.log_loss_acc_csv_path, 'w', newline=NEWLINE),
                                                           fieldnames=LOSS_ACC_STATE_FIELDS)
             self.log_loss_acc_csv_writer.writeheader()
         if store_logits:
@@ -178,7 +178,7 @@ class Iterator:
             if not os.path.isdir(root_path):
                 os.makedirs(root_path, exist_ok=True)
                 csv_path = f'{root_path}/logits.csv'
-                csv_writer = csv.DictWriter(open(csv_path, 'w', newline=''), fieldnames=LOGITS_STATE_FIELDS)
+                csv_writer = csv.DictWriter(open(csv_path, 'w', newline=NEWLINE), fieldnames=LOGITS_STATE_FIELDS)
                 csv_writer.writeheader()
                 self.logits_csv_writers[f'{mode}/{class_name}/{file_name}'] = csv_writer
             with open(self.log_loss_acc_csv_path, 'a') as f:
