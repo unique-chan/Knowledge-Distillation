@@ -29,6 +29,8 @@ class Parser:
                                       '(See __init__.py and README.md)')
         self.parser.add_argument('--gpu_index', default=0, type=int,
                                  help="[gpu_index = -1]: cpu, [gpu_index >= 0]: gpu")
+        self.parser.add_argument('--store_logits', action='store_true',
+                                 help='store the output distributions per each epoch for all images (*.csv)')
 
     def add_arguments_for_train(self):
         self.parser.add_argument('--lr', default=0.1, type=float, 
@@ -39,8 +41,10 @@ class Parser:
                                  help='learning rate step decay milestones (default: "[100, 150]")')
         self.parser.add_argument('--lr_step_gamma', default=0.1, type=float,
                                  help='learning rate step decay gamma (default: 0.1)')
-        self.parser.add_argument('--store', action='store_true',
-                                 help='store the best model weights (*.pt) and log files (*.csv) during training')
+        self.parser.add_argument('--store_weights', action='store_true',
+                                 help='store the best model weights (*.pt) during training')
+        self.parser.add_argument('--store_loss_acc_log', action='store_true',
+                                 help='store the training progress log in terms of loss and accuracy (*.csv)')
         self.parser.add_argument('--tag', type=str, 
                                  help='tag name for current experiment')
 
