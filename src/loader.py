@@ -7,6 +7,7 @@ from torch.utils import data
 from torchvision import datasets
 
 from __init__ import *
+from dataset import CustomDataset
 
 
 class Loader:
@@ -75,6 +76,8 @@ class Loader:
 
     def get_loader(self, mode, shuffle=True):
         assert self.dataset_dir[mode]  # mode: ['train' | 'valid' | 'test']
-        dataset = datasets.ImageFolder(root=self.dataset_dir[mode],
-                                       transform=transforms.Compose(self.transform_dir[mode]))
+        # dataset = datasets.ImageFolder(root=self.dataset_dir[mode],
+        #                                transform=transforms.Compose(self.transform_dir[mode]))
+        dataset = CustomDataset(dataset_path=self.dataset_dir[mode],
+                                transform=transforms.Compose(self.transform_dir[mode]))
         return data.DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
