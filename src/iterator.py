@@ -35,25 +35,19 @@ class Iterator:
         self.num_classes = num_classes
         self.device = device  # 'cpu', 'cuda:0', ...
         self.model.to(device)
-
         self.criterion = nn.CrossEntropyLoss()
         self.loader = {'train': None, 'valid': None, 'test': None}
-
         self.store_weights = store_weights
         self.store_loss_acc_log = store_loss_acc_log
         self.store_logits = store_logits
         self.tag_name = tag_name
-
         self.best_valid_acc_state = {'top1_acc': 0, 'top5_acc': 0}
-
         if store_weights or store_loss_acc_log or store_logits:
             os.makedirs(f'{LOG_DIR}/{tag_name}', exist_ok=True)
-
         if store_weights:
             # [GOAL] store the best validation model during training.
             self.best_model_state_path = f'{LOG_DIR}/{tag_name}/{tag_name}_valid_best.pt'
             self.best_model_state_dict = self.model.state_dict()
-
         if store_loss_acc_log:
             # [GOAL] store train/valid loss & acc per each epoch during training.
             self.loss_acc_state = {field_name: 0 for field_name in LOSS_ACC_STATE_FIELDS}
@@ -61,7 +55,6 @@ class Iterator:
             self.log_loss_acc_csv_writer = csv.DictWriter(open(self.log_loss_acc_csv_path, 'w', newline=''),
                                                           fieldnames=LOSS_ACC_STATE_FIELDS)
             self.log_loss_acc_csv_writer.writeheader()
-
         if store_logits:
             # [GOAL] store output distributions per each epoch for all images in the current experiment.
             self.logits_root_path = f'{LOG_DIR}/{self.tag_name}/logits'
@@ -74,7 +67,6 @@ class Iterator:
         loader = self.loader[mode]
         meter = {'loss': util.Meter(), 'top1_acc': util.Meter(), 'top5_acc': util.Meter()}
         assert loader, f"No loader['{mode}'] exists. Pass the loader to the Iterator via set_loader()."
-
         tqdm_loader = tqdm.tqdm(loader, mininterval=0.1) if bool_tqdm else loader
         classification_results = []
         output_distributions = []
@@ -87,7 +79,6 @@ class Iterator:
                 Iterator.__get_final_classification_results_and_topk_acc__(output_distribution, y, top_k=(1, 5))
             meter['top1_acc'].update(top1_acc.item(), k=output_distribution.size(0))
             meter['top5_acc'].update(top5_acc.item(), k=output_distribution.size(0))
-
             # calculate loss
             if mode in ['train', 'valid']:
                 loss = self.criterion(output_distribution, y)
@@ -100,19 +91,15 @@ class Iterator:
                     loss.backward()
                     self.optimizer.step()
                     self.lr_scheduler.step()
-
             else:
                 log_msg = f"Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% (top5) {meter['top5_acc'].avg * 100.:.2f}%"
-
             # accumulate the prediction results
             if self.store_logits:
                 img_paths.extend(img_path)
                 classification_results.extend(torch.flatten(classification_result).tolist())
                 output_distributions.extend([logit.tolist() for logit in output_distribution.cpu().detach().numpy()])
-
             if bool_tqdm:
                 tqdm_loader.set_description(f'{mode.upper()} | {cur_epoch + 1:>5d} | {log_msg}')
-
         return meter['loss'].avg, meter['top1_acc'].avg * 100., meter['top5_acc'].avg * 100., \
                img_paths, classification_results, output_distributions
 
@@ -182,7 +169,7 @@ class Iterator:
             f.flush()
 
     def __write_csv_logits(self, mode, cur_epoch, img_paths, classification_results, output_distributions):
-        assert len(img_paths) == len(classification_results) == len(output_distributions)
+        # assert len(img_paths) == len(classification_results) == len(output_distributions)
         zips = zip(img_paths, classification_results, output_distributions)
         sep = os.sep  # '/': linux, '\': windows
         for img_path, classification_result, output_distribution in zips:
