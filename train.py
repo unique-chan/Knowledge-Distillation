@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # Iterator
     my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, tag_name,
-                                    my_device, my_args.store)
+                                    my_device, my_args.store_weights, my_args.store_loss_acc_log, my_args.store_logits)
     my_iterator.set_loader('train', my_train_loader)
     my_iterator.set_loader('valid', my_valid_loader)
 
@@ -49,4 +49,7 @@ if __name__ == '__main__':
         my_iterator.train(cur_epoch=cur_epoch)
         my_iterator.valid(cur_epoch=cur_epoch)
 
-    my_iterator.close_for_train_val()
+    if my_args.store_weights:
+        my_iterator.store_model()
+
+    print(f'{tag_name} experiment has been done.')
