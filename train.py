@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Tag
     cur_time = datetime.datetime.now().strftime('%y-%m-%d-%H-%M-%S')
-    tag_name = f'{my_args.tag}_{cur_time}' if my_args.tag else f'{cur_time}'
+    tag_name = f'{my_args.tag}_{my_args.network_name}_{cur_time}' if my_args.tag else f'{cur_time}'
     print(f'{tag_name} experiment has been started.')
 
     # Loader (Train / Valid)
@@ -51,5 +51,7 @@ if __name__ == '__main__':
 
     if my_args.store_weights:
         my_iterator.store_model()
+
+    util.store_txt(f'{LOG_DIR}/{tag_name}/setup.txt', my_args)
 
     print(f'{tag_name} experiment has been done.')

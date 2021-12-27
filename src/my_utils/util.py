@@ -25,3 +25,9 @@ def fix_random_seed(seed=1234):
     manual_seed(seed)
     cuda.manual_seed(seed)
     backends.cudnn.deterministic = True
+
+
+def store_txt(path, txt):
+    with open(path, 'w') as f:
+        f.write(str(txt))
+        f.flush()
