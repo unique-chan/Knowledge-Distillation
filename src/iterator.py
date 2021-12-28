@@ -23,7 +23,6 @@ except ImportError:
 
 LOSS_ACC_STATE_FIELDS = ['epoch', 'train_loss', 'valid_loss',
                          'train_top1_acc', 'train_top5_acc', 'valid_top1_acc', 'valid_top5_acc']
-LOGITS_STATE_FIELDS = ['epoch', 'output_distribution', 'classification_result']
 
 
 class Iterator:
@@ -59,6 +58,7 @@ class Iterator:
             # [GOAL] store output distributions per each epoch for all images in the current experiment.
             self.logits_root_path = f'{LOG_DIR}/{self.tag_name}/logits'
             self.logits_csv_writers = {}  # key: 'img_path', value: csv_writer for corresponding key
+
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
@@ -150,6 +150,7 @@ class Iterator:
         _, top_1_prediction = out.topk(k=1, dim=1, largest=True, sorted=True)
         return top_1_prediction, top_k_acc_list  # sum of correct predictions (top_1, top_k)
 
+
     def __update_best_valid_acc_state(self, top1_acc, top5_acc):
         if top1_acc > self.best_valid_acc_state['top1_acc'] or \
                 (top1_acc == self.best_valid_acc_state['top1_acc'] and
@@ -178,7 +179,8 @@ class Iterator:
             if not os.path.isdir(root_path):
                 os.makedirs(root_path, exist_ok=True)
                 csv_path = f'{root_path}/logits.csv'
-                csv_writer = csv.DictWriter(open(csv_path, 'w', newline=NEWLINE), fieldnames=LOGITS_STATE_FIELDS)
+                csv_writer = csv.DictWriter(open(csv_path, 'w', newline=NEWLINE),
+                                            fieldnames=['epoch', 'output_distribution', 'classification_result'])
                 csv_writer.writeheader()
                 self.logits_csv_writers[f'{mode}/{class_name}/{file_name}'] = csv_writer
             with open(self.log_loss_acc_csv_path, 'a') as f:
