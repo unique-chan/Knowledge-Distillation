@@ -71,17 +71,17 @@ class Iterator:
         classification_results = []
         output_distributions = []
         img_paths = []
-        for (img_path, x, y) in tqdm_loader:
-            x, y = x.to(self.device), y.to(self.device)
+        for (img_path, x_batch, y_batch) in tqdm_loader:
+            x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device)
             # predict
-            output_distribution = self.model(x)
+            output_distribution = self.model(x_batch)
             classification_result, [top1_acc, top5_acc] = \
-                Iterator.__get_final_classification_results_and_topk_acc__(output_distribution, y, top_k=(1, 5))
+                Iterator.__get_final_classification_results_and_topk_acc__(output_distribution, y_batch, top_k=(1, 5))
             meter['top1_acc'].update(top1_acc.item(), k=output_distribution.size(0))
             meter['top5_acc'].update(top5_acc.item(), k=output_distribution.size(0))
             # calculate loss
             if mode in ['train', 'valid']:
-                loss = self.criterion(output_distribution, y)
+                loss = self.criterion(output_distribution, y_batch)
                 meter['loss'].update(loss.item(), k=output_distribution.size(0))
                 log_msg = f"Loss: {meter['loss'].avg:.3f} | Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% " \
                           f"(top5) {meter['top5_acc'].avg * 100.:.2f}% "
