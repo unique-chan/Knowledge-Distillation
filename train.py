@@ -11,9 +11,6 @@ if __name__ == '__main__':
     # Ignore Warning Messages
     filterwarnings('ignore')
 
-    # Random Seeds For Reproducibility
-    # util.fix_random_seed()
-
     # Parser
     my_parser = parser.Parser(mode='train')
     my_args = my_parser.parser.parse_args()
