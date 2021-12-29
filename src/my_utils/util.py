@@ -1,7 +1,11 @@
 import random
 
+import torch
 from torch import manual_seed, cuda, backends
 import numpy as np
+from sklearn.metrics import confusion_matrix
+import seaborn as sn
+import pandas as pd
 
 
 class Meter:
@@ -31,3 +35,27 @@ def store_txt(path, txt):
     with open(path, 'w') as f:
         f.write(str(txt))
         f.flush()
+
+def createConfusionMatrix(net, loader, num_of_classes):
+    y_pred = [] # save predction
+    y_true = [] # save ground truth
+
+    # iterate over data
+    for inputs, labels in loader:
+        output = net(inputs)  # Feed Network
+
+        output = (torch.max(torch.exp(output), 1)[1]).data.cpu().numpy()
+        y_pred.extend(output)  # save prediction
+
+        labels = labels.data.cpu().numpy()
+        y_true.extend(labels)  # save ground truth
+
+    # constant for classes
+    classes = (list(range(num_of_classes)))
+
+    # Build confusion matrix
+    cf_matrix = confusion_matrix(y_true, y_pred)
+    df_cm = pd.DataFrame(cf_matrix/np.sum(cf_matrix) * 10, index=[i for i in classes],
+                         columns=[i for i in classes])
+    plt.figure(figsize=(12, 7))
+    return sn.heatmap(df_cm, annot=True).get_figure()
