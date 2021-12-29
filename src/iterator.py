@@ -61,6 +61,7 @@ class Iterator:
             self.logits_root_path = f'{LOG_DIR}/{self.tag_name}/logits'
             self.logits_csv_writers = {}  # key: 'img_path', value: csv_writer for corresponding key
         self.writer = SummaryWriter(f'runs/{self.tag_name}')
+        self.best_valid_acc = 0
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
@@ -116,9 +117,6 @@ class Iterator:
             self.writer.add_scalar('training loss', loss, cur_epoch)
             self.writer.add_scalar('top1 accuracy', top1_acc, cur_epoch)
             self.writer.add_scalar('top5 accuracy', top5_acc, cur_epoch)
-            self.writer.add_figure('Confusion Matrix',
-                                   util.createConfusionMatrix(self.model, self.loader, self.num_classes),
-                                   cur_epoch)
         if self.store_logits:
             self.__write_csv_logits(mode, cur_epoch, img_paths, classification_results, output_distributions)
 
@@ -139,6 +137,11 @@ class Iterator:
             self.__write_csv_log_loss_acc()
         if self.store_logits:
             self.__write_csv_logits(mode, cur_epoch, img_paths, classification_results, output_distributions)
+        if self.best_valid_acc < top1_acc:
+            self.writer.add_figure('Confusion Matrix',
+                                   util.createConfusionMatrix(self.model, self.loader[mode], self.num_classes),
+                                   cur_epoch)
+            self.best_valid_acc = top1_acc
 
     def test(self):
         mode = 'test'
