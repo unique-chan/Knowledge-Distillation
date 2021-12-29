@@ -3,6 +3,7 @@ import os
 
 import torch
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 
 from src.my_utils import util
 from __init__ import *
@@ -21,7 +22,8 @@ except ImportError:
     bool_tb = False
     print('[Warning] Try to install tensorboard for checking the status of learning.')
 
-LOSS_ACC_STATE_FIELDS = ['epoch', 'train_loss', 'valid_loss',
+LOSS_ACC_STATE_FIELDS = ['epoch',
+                         'train_loss', 'valid_loss',
                          'train_top1_acc', 'train_top5_acc', 'valid_top1_acc', 'valid_top5_acc']
 
 
@@ -58,7 +60,8 @@ class Iterator:
             # [GOAL] store output distributions per each epoch for all images in the current experiment.
             self.logits_root_path = f'{LOG_DIR}/{self.tag_name}/logits'
             self.logits_csv_writers = {}  # key: 'img_path', value: csv_writer for corresponding key
-
+        self.writer = SummaryWriter(f'runs/{self.tag_name}')
+        self.best_valid_acc = 0
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
@@ -111,6 +114,9 @@ class Iterator:
         self.lr_scheduler.step()
         if self.store_loss_acc_log:
             self.__update_loss_acc_state(mode, cur_epoch, loss, top1_acc, top5_acc)
+            self.writer.add_scalar('training loss', loss, cur_epoch)
+            self.writer.add_scalar('top1 accuracy', top1_acc, cur_epoch)
+            self.writer.add_scalar('top5 accuracy', top5_acc, cur_epoch)
         if self.store_logits:
             self.__write_csv_logits(mode, cur_epoch, img_paths, classification_results, output_distributions)
 
@@ -125,9 +131,17 @@ class Iterator:
             self.best_model_state_dict = self.model.state_dict()
         if self.store_loss_acc_log:
             self.__update_loss_acc_state(mode, cur_epoch, loss, top1_acc, top5_acc)
+            self.writer.add_scalar('validation loss', loss, cur_epoch)
+            self.writer.add_scalar('top1 accuracy', top1_acc, cur_epoch)
+            self.writer.add_scalar('top5 accuracy', top5_acc, cur_epoch)
             self.__write_csv_log_loss_acc()
         if self.store_logits:
             self.__write_csv_logits(mode, cur_epoch, img_paths, classification_results, output_distributions)
+        if self.best_valid_acc < top1_acc:
+            self.writer.add_figure('Confusion Matrix',
+                                   util.createConfusionMatrix(self.model, self.loader[mode], self.num_classes),
+                                   cur_epoch)
+            self.best_valid_acc = top1_acc
 
     def test(self):
         mode = 'test'
@@ -149,7 +163,6 @@ class Iterator:
         top_k_acc_list = [correct[:k].reshape(-1).float().sum(0, keepdim=True) for k in top_k]
         _, top_1_prediction = out.topk(k=1, dim=1, largest=True, sorted=True)
         return top_1_prediction, top_k_acc_list  # sum of correct predictions (top_1, top_k)
-
 
     def __update_best_valid_acc_state(self, top1_acc, top5_acc):
         if top1_acc > self.best_valid_acc_state['top1_acc'] or \
