@@ -31,6 +31,8 @@ class Parser:
                                  help="[gpu_index = -1]: cpu, [gpu_index >= 0]: gpu")
         self.parser.add_argument('--store_logits', action='store_true',
                                  help='store the output distributions per each epoch for all images (*.csv)')
+        self.parser.add_argument('--store_confusion_matrix', action='store_true',
+                                 help='store the confusion matrix of the model')
 
     def add_arguments_for_train(self):
         self.parser.add_argument('--lr', default=0.1, type=float, 

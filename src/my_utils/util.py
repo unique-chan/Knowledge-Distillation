@@ -1,12 +1,10 @@
+import itertools
 import random
 
-import torch
 from matplotlib import pyplot as plt
 from torch import manual_seed, cuda, backends
 import numpy as np
 from sklearn.metrics import confusion_matrix
-import seaborn as sn
-import pandas as pd
 
 
 class Meter:
@@ -38,43 +36,31 @@ def store_txt(path, txt):
         f.flush()
 
 
-def createConfusionMatrix(net, loader, num_of_classes, labels=None):
-    y_pred, y_true = [], [] # save prediction, ground truth
+def create_confusion_matrix(y_trues, y_preds, num_of_classes,
+                            class_names=None, threshold=15, figsize=(8, 6), cmap=plt.cm.Blues):
+    cf_matrix = confusion_matrix(y_trues, y_preds)
+    normalized_cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
+    # normalized_cf_matrix = cf_matrix / np.sum(cf_matrix) * num_of_classes
 
-    # iterate over data
-    with torch.no_grad():
-        for _, inputs, labels in loader:
-            output = net(inputs.cuda())  # Feed Network
-            output = (torch.max(output, 1)[1]).data.cpu().numpy()
-            y_pred.extend(output)  # save prediction
-            labels = labels.data.cpu().numpy()
-            y_true.extend(labels)  # save ground truth
+    fig = plt.figure(figsize=figsize)
+    plt.imshow(normalized_cf_matrix, interpolation='nearest', cmap=cmap)
+    plt.colorbar()
 
-    if num_of_classes <= 15:
-        if labels is None:
-            labels = list(range(num_of_classes))
-        # Build confusion matrix
-        cf_matrix = confusion_matrix(y_true, y_pred)
-        new_matrix = cf_matrix/np.sum(cf_matrix) * num_of_classes
-        p = sn.heatmap(np.array(new_matrix), annot=True, vmin=0, vmax=1, fmt='.2f', square='True', cmap="Blues")
-    else:
-        classes = list(range(num_of_classes))
+    if num_of_classes <= threshold:
+        labels = class_names if class_names else np.arange(num_of_classes)
+        plt.xticks(np.arange(num_of_classes), labels, rotation=45)
+        plt.yticks(np.arange(num_of_classes), labels)
 
-        # constant for classes
-        cf_matrix = confusion_matrix(y_true, y_pred)
-        df_cm = pd.DataFrame(cf_matrix/np.sum(cf_matrix) * num_of_classes,
-                             index=classes, columns=classes)
-        p = sn.heatmap(df_cm, vmin=0, vmax=1, square='True', cmap="Blues")
-
-    plt.figure(figsize=(11, 8))
-
-    p.set_xlabel('Ground Truth Class')
-    p.set_ylabel('Predicted Class')
-
-    p.axhline(y=0, color='k', linewidth=1)
-    p.axhline(y=num_of_classes, color='k', linewidth=2)
-    p.axvline(x=0, color='k', linewidth=1)
-    p.axvline(x=num_of_classes, color='k', linewidth=2)
+        # plotting probabilities: p(prediction=i|ground_truth=j) for all classes i and j.
+        txt_color_threshold = 0.5
+        for i, j in itertools.product(np.arange(normalized_cf_matrix.shape[0]),
+                                      np.arange(normalized_cf_matrix.shape[1])):
+            plt.text(j, i, f'{normalized_cf_matrix[i, j]: .2f}',
+                     horizontalalignment='center',
+                     color='white' if normalized_cf_matrix[i, j] > txt_color_threshold else 'black')
 
     plt.tight_layout()
-    return p.get_figure()
+    plt.xlabel('Predicted Class' + ('' if class_names else ' Index'))
+    plt.ylabel('Ground Truth Class' + ('' if class_names else ' Index'))
+
+    return fig
