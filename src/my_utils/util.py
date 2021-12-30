@@ -39,20 +39,22 @@ def store_txt(path, txt):
 def create_confusion_matrix(y_trues, y_preds, num_of_classes,
                             class_names=None, threshold=15, figsize=(8, 6), cmap=plt.cm.Blues):
     cf_matrix = confusion_matrix(y_trues, y_preds)
-    normalized_cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
-    # normalized_cf_matrix = cf_matrix / np.sum(cf_matrix) * num_of_classes
+    normalized_cf_matrix = cf_matrix / np.sum(cf_matrix) * num_of_classes
+    # normalized_cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
 
     fig = plt.figure(figsize=figsize)
     plt.imshow(normalized_cf_matrix, interpolation='nearest', cmap=cmap)
     plt.colorbar()
 
+    bool_postfix_index = True
     if num_of_classes <= threshold:
+        bool_postfix_index = False
         labels = class_names if class_names else np.arange(num_of_classes)
         plt.xticks(np.arange(num_of_classes), labels, rotation=45)
         plt.yticks(np.arange(num_of_classes), labels)
 
         # plotting probabilities: p(prediction=i|ground_truth=j) for all classes i and j.
-        txt_color_threshold = 0.5
+        txt_color_threshold = normalized_cf_matrix.max() / 2.
         for i, j in itertools.product(np.arange(normalized_cf_matrix.shape[0]),
                                       np.arange(normalized_cf_matrix.shape[1])):
             plt.text(j, i, f'{normalized_cf_matrix[i, j]: .2f}',
@@ -60,7 +62,7 @@ def create_confusion_matrix(y_trues, y_preds, num_of_classes,
                      color='white' if normalized_cf_matrix[i, j] > txt_color_threshold else 'black')
 
     plt.tight_layout()
-    plt.xlabel('Predicted Class' + ('' if class_names else ' Index'))
-    plt.ylabel('Ground Truth Class' + ('' if class_names else ' Index'))
+    plt.xlabel('Predicted Class' + ('' if not bool_postfix_index else ' Index'))
+    plt.ylabel('Ground Truth Class' + ('' if not bool_postfix_index else ' Index'))
 
     return fig

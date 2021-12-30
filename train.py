@@ -1,4 +1,5 @@
 import datetime
+import os.path
 from warnings import filterwarnings
 
 import torch
@@ -17,7 +18,8 @@ if __name__ == '__main__':
 
     # Tag
     cur_time = datetime.datetime.now().strftime('%y-%m-%d-%H-%M-%S')
-    tag_name = f'{my_args.tag}_{my_args.network_name}_{cur_time}' if my_args.tag else f'{cur_time}'
+    tag_name = f'{my_args.tag}_{os.path.basename(my_args.dataset_dir)}_' \
+               f'{my_args.network_name}_{cur_time}' if my_args.tag else f'{cur_time}'
     print(f'{tag_name} experiment has been started.')
 
     # Loader (Train / Valid)
@@ -37,11 +39,12 @@ if __name__ == '__main__':
 
     # Iterator
     my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, tag_name,
-                                    my_device, my_args.store_weights, my_args.store_loss_acc_log, my_args.store_logits)
+                                    my_device, my_args.store_weights, my_args.store_loss_acc_log,
+                                    my_args.store_confusion_matrix, my_args.store_logits)
     my_iterator.set_loader('train', my_train_loader)
     my_iterator.set_loader('valid', my_valid_loader)
 
-    # Train and valid
+    # Training and Validation
     for cur_epoch in range(0, my_args.epochs):
         my_iterator.train(cur_epoch=cur_epoch)
         my_iterator.valid(cur_epoch=cur_epoch)

@@ -3,7 +3,6 @@ import os
 
 import torch
 import torch.nn as nn
-from torch.utils.tensorboard import SummaryWriter
 
 from src.my_utils import util
 from __init__ import *
@@ -17,7 +16,7 @@ except ImportError:
 
 try:
     bool_tb = True
-    import tensorboard
+    from torch.utils.tensorboard import SummaryWriter
 except ImportError:
     bool_tb = False
     print('[Warning] Try to install tensorboard for checking the status of learning.')
@@ -29,7 +28,8 @@ LOSS_ACC_STATE_FIELDS = ['epoch',
 
 class Iterator:
     def __init__(self, model, optimizer, lr_scheduler, num_classes, tag_name,
-                 device='cpu', store_weights=False, store_loss_acc_log=False, store_logits=False):
+                 device='cpu', store_weights=False, store_loss_acc_log=False,
+                 store_confusion_matrix=False, store_logits=False):
         self.model = model
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
@@ -40,6 +40,7 @@ class Iterator:
         self.loader = {'train': None, 'valid': None, 'test': None}
         self.store_weights = store_weights
         self.store_loss_acc_log = store_loss_acc_log
+        self.store_confusion_matrix = store_confusion_matrix
         self.store_logits = store_logits
         self.tag_name = tag_name
         self.best_valid_acc_state = {'top1_acc': 0, 'top5_acc': 0}
@@ -59,9 +60,12 @@ class Iterator:
         if store_logits:
             # [GOAL] store output distributions per each epoch for all images in the current experiment.
             self.logits_root_path = f'{LOG_DIR}/{self.tag_name}/logits'
-            self.logits_csv_writers = {}  # key: 'img_path', value: csv_writer for corresponding key
-        self.writer = SummaryWriter(f'runs/{self.tag_name}')
-        self.best_valid_acc = 0
+            self.logits_csv_writers = {}  # key: 'img_path' - value: csv_writer for corresponding key
+        if store_confusion_matrix:
+            # [Goal] store confusion matrix if so far best during validation
+            self.confusion_matrix_root_path = f'{LOG_DIR}/{self.tag_name}/cf_matrix'
+            os.makedirs(self.confusion_matrix_root_path, exist_ok=True)
+        self.tb_writer = SummaryWriter(f'runs/{self.tag_name}') if bool_tb else None
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
@@ -71,21 +75,22 @@ class Iterator:
         meter = {'loss': util.Meter(), 'top1_acc': util.Meter(), 'top5_acc': util.Meter()}
         assert loader, f"No loader['{mode}'] exists. Pass the loader to the Iterator via set_loader()."
         tqdm_loader = tqdm.tqdm(loader, mininterval=0.1) if bool_tqdm else loader
-        classification_results = []
-        output_distributions = []
-        img_paths = []
-        for (img_path, x_batch, y_batch) in tqdm_loader:
-            x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device)
+        img_paths = []   # set of image(x) paths
+        y_trues = []   # set of ground_truth
+        y_preds = []   # set of prediction (classification result)
+        y_dists = []   # set of predicted distribution
+        for (img_path, x, y) in tqdm_loader:
+            x, y = x.to(self.device), y.to(self.device)
             # predict
-            output_distribution = self.model(x_batch)
-            classification_result, [top1_acc, top5_acc] = \
-                Iterator.__get_final_classification_results_and_topk_acc__(output_distribution, y_batch, top_k=(1, 5))
-            meter['top1_acc'].update(top1_acc.item(), k=output_distribution.size(0))
-            meter['top5_acc'].update(top5_acc.item(), k=output_distribution.size(0))
+            y_dist = self.model(x)
+            y_pred, [top1_acc, top5_acc] = \
+                Iterator.__get_final_classification_results_and_topk_acc__(y_dist, y, top_k=(1, 5))
+            meter['top1_acc'].update(top1_acc.item(), k=y_dist.size(0))
+            meter['top5_acc'].update(top5_acc.item(), k=y_dist.size(0))
             # calculate loss
             if mode in ['train', 'valid']:
-                loss = self.criterion(output_distribution, y_batch)
-                meter['loss'].update(loss.item(), k=output_distribution.size(0))
+                loss = self.criterion(y_dist, y)
+                meter['loss'].update(loss.item(), k=y_dist.size(0))
                 log_msg = f"Loss: {meter['loss'].avg:.3f} | Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% " \
                           f"(top5) {meter['top5_acc'].avg * 100.:.2f}% "
                 # update
@@ -97,60 +102,67 @@ class Iterator:
             else:
                 log_msg = f"Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% (top5) {meter['top5_acc'].avg * 100.:.2f}%"
             # accumulate the prediction results
-            if self.store_logits:
+            if self.store_logits or self.store_confusion_matrix:
                 img_paths.extend(img_path)
-                classification_results.extend(torch.flatten(classification_result).tolist())
-                output_distributions.extend([logit.tolist() for logit in output_distribution.cpu().detach().numpy()])
+                y_trues.extend(y.data.cpu().numpy())
+                y_preds.extend(torch.flatten(y_pred).tolist())
+                y_dists.extend([logit.tolist() for logit in y_dist.cpu().detach().numpy()])
             if bool_tqdm:
                 tqdm_loader.set_description(f'{mode.upper()} | {cur_epoch + 1:>5d} | {log_msg}')
         return meter['loss'].avg, meter['top1_acc'].avg * 100., meter['top5_acc'].avg * 100., \
-               img_paths, classification_results, output_distributions
+               img_paths, y_trues, y_preds, y_dists
 
     def train(self, cur_epoch):
         mode = 'train'
         self.model.train()
-        loss, top1_acc, top5_acc, img_paths, classification_results, output_distributions = \
+        loss, top1_acc, top5_acc, img_paths, y_trues, y_preds, y_dists = \
             self.one_epoch(mode=mode, cur_epoch=cur_epoch)
         self.lr_scheduler.step()
         if self.store_loss_acc_log:
             self.__update_loss_acc_state(mode, cur_epoch, loss, top1_acc, top5_acc)
-            self.writer.add_scalar('training loss', loss, cur_epoch)
-            self.writer.add_scalar('top1 accuracy', top1_acc, cur_epoch)
-            self.writer.add_scalar('top5 accuracy', top5_acc, cur_epoch)
+            if self.tb_writer:
+                self.tb_writer.add_scalar('train-loss', loss, cur_epoch)
+                self.tb_writer.add_scalar('train-top1-acc', top1_acc, cur_epoch)
+                self.tb_writer.add_scalar('train-top5-acc', top5_acc, cur_epoch)
         if self.store_logits:
-            self.__write_csv_logits(mode, cur_epoch, img_paths, classification_results, output_distributions)
+            self.__write_csv_logits(mode, cur_epoch, img_paths, y_preds, y_dists)
 
     def valid(self, cur_epoch):
         mode = 'valid'
         self.model.eval()
         with torch.no_grad():
-            loss, top1_acc, top5_acc, img_paths, classification_results, output_distributions = \
+            loss, top1_acc, top5_acc, img_paths, y_trues, y_preds, y_dists = \
                 self.one_epoch(mode=mode, cur_epoch=cur_epoch)
-        self.__update_best_valid_acc_state(top1_acc, top5_acc)
+        is_best_valid = self.__update_best_valid_acc_state(top1_acc, top5_acc)
         if self.store_weights:
             self.best_model_state_dict = self.model.state_dict()
         if self.store_loss_acc_log:
             self.__update_loss_acc_state(mode, cur_epoch, loss, top1_acc, top5_acc)
-            self.writer.add_scalar('validation loss', loss, cur_epoch)
-            self.writer.add_scalar('top1 accuracy', top1_acc, cur_epoch)
-            self.writer.add_scalar('top5 accuracy', top5_acc, cur_epoch)
             self.__write_csv_log_loss_acc()
+            if self.tb_writer:
+                self.tb_writer.add_scalar('valid-loss', loss, cur_epoch)
+                self.tb_writer.add_scalar('valid-top1-acc', top1_acc, cur_epoch)
+                self.tb_writer.add_scalar('valid-top5-acc', top5_acc, cur_epoch)
         if self.store_logits:
-            self.__write_csv_logits(mode, cur_epoch, img_paths, classification_results, output_distributions)
-        if self.best_valid_acc < top1_acc:
-            self.writer.add_figure('Confusion Matrix',
-                                   util.createConfusionMatrix(self.model, self.loader[mode], self.num_classes),
-                                   cur_epoch)
-            self.best_valid_acc = top1_acc
+            self.__write_csv_logits(mode, cur_epoch, img_paths, y_preds, y_dists)
+        if self.store_confusion_matrix:
+            if is_best_valid:
+                class_names = self.loader[mode].dataset.class_names  # only valid when using src/dataset.py
+                plot_cf_matrix = util.create_confusion_matrix(y_trues, y_preds,
+                                                              num_of_classes=len(class_names),
+                                                              class_names=class_names)
+                if self.tb_writer:
+                    self.tb_writer.add_figure('Confusion Matrix', plot_cf_matrix, cur_epoch)
+                plot_cf_matrix.savefig(f'{self.confusion_matrix_root_path}/epoch-{cur_epoch}.svg', dpi=600)
 
     def test(self):
         mode = 'test'
         self.model.eval()
         with torch.no_grad():
-            _, top1_acc, top5_acc, img_paths, classification_results, output_distributions = \
+            _, top1_acc, top5_acc,  img_paths, y_trues, y_preds, y_dists = \
                 self.one_epoch(mode=mode, cur_epoch=-1)
         if self.store_logits:
-            self.__write_csv_logits(mode, -1, img_paths, classification_results, output_distributions)
+            self.__write_csv_logits(mode, -1, img_paths, y_preds, y_dists)
 
     def store_model(self):
         torch.save(self.best_model_state_dict, self.best_model_state_path)
@@ -170,6 +182,8 @@ class Iterator:
                  top5_acc > self.best_valid_acc_state['top5_acc']):
             self.best_valid_acc_state['top1_acc'] = top1_acc
             self.best_valid_acc_state['top5_acc'] = top5_acc
+            return True
+        return False
 
     def __update_loss_acc_state(self, mode, epoch, loss, top1_acc, top5_acc):
         self.loss_acc_state['epoch'] = epoch
