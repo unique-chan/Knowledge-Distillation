@@ -14,8 +14,10 @@
 ~~~ME
 torch
 torchvision
-tqdm            # not mandatory
-tensorboard     # not mandatory
+matplotlib
+scikit-learn
+tqdm            # not mandatory but recommended
+tensorboard     # not mandatory but recommended
 ~~~
 
 
@@ -39,7 +41,14 @@ tensorboard     # not mandatory
 
 2. Run **train.py** for training. The below is an example. See **src/my_utils/parser.py** for details.
 ~~~ME
-python train.py --network_name='efficientnet_b0' --dataset_dir='./cifar10' --epochs=1 --lr=0.1 --auto_mean_std --store --tag='experiment1'
+python train.py --network_name='efficientnet_b0' --dataset_dir='./cifar10' --epochs=1 --lr=0.1 \
+--auto_mean_std --store_weights --store_loss_acc_log --store_logits --store_confusion_matrix --tag='experiment1'
+~~~
+
+3. Run **test.py** for test. The below is an example. See **src/my_utils/parser.py** for details.
+~~~ME
+python test.py --network_name='efficientnet_b0' --dataset_dir='./cifar10' \
+--auto_mean_std --store_weights --store_loss_acc_log --store_logits --store_confusion_matrix --checkpoint='model.pt'
 ~~~
 
 
@@ -50,3 +59,4 @@ If you find any bugs or have opinions for further improvements, feel free to con
 ### Reference
 1. https://github.com/weiaicunzai/pytorch-cifar100
 2. https://github.com/peterliht/knowledge-distillation-pytorch
+3. https://medium.com/@djin31/how-to-plot-wholesome-confusion-matrix-40134fd402a8 (Confusion Matrix)
