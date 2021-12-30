@@ -20,6 +20,7 @@ class CustomDataset(Dataset):
                                         glob.glob(f'{class_dirs[i]}/*.png') +
                                         glob.glob(f'{class_dirs[i]}/*.PNG'))
                               for i in range(len(class_dirs))}
+        self.class_names = [os.path.basename(class_dir) for class_dir in class_dirs]
         self.img_path_per_class = [(img_path_per_class[i][j], i)
                                    for i in img_path_per_class.keys()
                                    for j in range(len(img_path_per_class[i]))]
