@@ -147,22 +147,19 @@ class Iterator:
             self.__write_csv_logits(mode, cur_epoch, img_paths, y_preds, y_dists)
         if self.store_confusion_matrix:
             if is_best_valid:
-                class_names = self.loader[mode].dataset.class_names  # only valid when using src/dataset.py
-                plot_cf_matrix = util.create_confusion_matrix(y_trues, y_preds,
-                                                              num_of_classes=len(class_names),
-                                                              class_names=class_names)
-                if self.tb_writer:
-                    self.tb_writer.add_figure('Confusion Matrix', plot_cf_matrix, cur_epoch)
-                plot_cf_matrix.savefig(f'{self.confusion_matrix_root_path}/epoch-{cur_epoch}.svg', dpi=600)
+                self.__write_confusion_matrix(mode, cur_epoch, y_preds, y_trues)
 
     def test(self):
         mode = 'test'
         self.model.eval()
         with torch.no_grad():
-            _, top1_acc, top5_acc,  img_paths, y_trues, y_preds, y_dists = \
+            _, top1_acc, top5_acc, img_paths, y_trues, y_preds, y_dists = \
                 self.one_epoch(mode=mode, cur_epoch=-1)
+        print(f'➜ top1_acc: {top1_acc: .2f}%, top5_acc: {top5_acc: .2f}%')
         if self.store_logits:
             self.__write_csv_logits(mode, -1, img_paths, y_preds, y_dists)
+        if self.store_confusion_matrix:
+            self.__write_confusion_matrix(mode, -1, y_preds, y_trues)
 
     def store_model(self):
         torch.save(self.best_model_state_dict, self.best_model_state_path)
@@ -203,17 +200,27 @@ class Iterator:
         for img_path, classification_result, output_distribution in zips:
             class_name, file_name = img_path.split(sep)[-2], img_path.split(sep)[-1]
             root_path = f'{self.logits_root_path}/{mode}/{class_name}/{file_name}'
+            csv_path = f'{root_path}/logits.csv'
             if not os.path.isdir(root_path):
                 os.makedirs(root_path, exist_ok=True)
-                csv_path = f'{root_path}/logits.csv'
                 csv_writer = csv.DictWriter(open(csv_path, 'w', newline=NEWLINE),
                                             fieldnames=['epoch', 'output_distribution', 'classification_result'])
                 csv_writer.writeheader()
                 self.logits_csv_writers[f'{mode}/{class_name}/{file_name}'] = csv_writer
-            with open(self.log_loss_acc_csv_path, 'a') as f:
+            with open(csv_path, 'a') as f:
                 self.logits_csv_writers[f'{mode}/{class_name}/{file_name}'].writerow({
                     'epoch': cur_epoch,
                     'output_distribution': output_distribution,
                     'classification_result': classification_result
                 })
                 f.flush()
+
+    def __write_confusion_matrix(self, mode, cur_epoch, y_preds, y_trues):
+        class_names = self.loader[mode].dataset.class_names  # only valid when using src/dataset.py
+        plot_cf_matrix = util.create_confusion_matrix(y_trues, y_preds,
+                                                      num_of_classes=len(class_names),
+                                                      class_names=class_names)
+        if self.tb_writer and mode != 'test':
+            self.tb_writer.add_figure('Confusion Matrix', plot_cf_matrix, cur_epoch)
+        file_name = f'{mode}-epoch-{cur_epoch}.svg' if cur_epoch > -1 else f'{mode}.svg'
+        plot_cf_matrix.savefig(f'{self.confusion_matrix_root_path}/{file_name}', dpi=600)
