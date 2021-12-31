@@ -43,7 +43,7 @@ tensorboard     # not mandatory but recommended
 ~~~ME
 python train.py --network_name='efficientnet_b0' --dataset_dir='cifar10' --epochs=5 --lr=0.1 \
 --auto_mean_std --store_weights --store_loss_acc_log --store_logits \
---store_confusion_matrix --tag='experiment1'
+--store_confusion_matrix --tag='your_experiment_name'
 ~~~
 
 3. Run **test.py** for test. The below is an example. See **src/my_utils/parser.py** for details.
