@@ -55,7 +55,7 @@ python test.py --network_name='efficientnet_b0' --dataset_dir='cifar10' \
 
 
 ### Contribution
-If you find any bugs or have opinions for further improvements, feel free to contact us (yechankim@gm.gist.ac.kr or maestr.oh@gm.gist.ac.kr). All contributions are welcome.
+🐛 If you find any bugs or have opinions for further improvements, feel free to contact us (yechankim@gm.gist.ac.kr or maestr.oh@gm.gist.ac.kr). All contributions are welcome.
 
 
 ### Reference
