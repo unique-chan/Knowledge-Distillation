@@ -2,11 +2,9 @@ import datetime
 import os.path
 from warnings import filterwarnings
 
-import torch
-
-from src.my_utils import parser, util
+from src.my_utils import util
 from __init__ import *
-from src import loader, model, iterator
+from src import loader, model, iterator, parser
 
 if __name__ == '__main__':
     # Ignore Warning Messages
@@ -39,7 +37,8 @@ if __name__ == '__main__':
 
     # Iterator
     my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, tag_name,
-                                    my_device, my_args.store_weights, my_args.store_loss_acc_log,
+                                    my_device, my_args.loss_function,
+                                    my_args.store_weights, my_args.store_loss_acc_log,
                                     my_args.store_confusion_matrix, my_args.store_logits)
     my_iterator.set_loader('train', my_train_loader)
     my_iterator.set_loader('valid', my_valid_loader)

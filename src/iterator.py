@@ -21,6 +21,7 @@ except ImportError:
     bool_tb = False
     print('[Warning] Try to install tensorboard for checking the status of learning.')
 
+
 LOSS_ACC_STATE_FIELDS = ['epoch',
                          'train_loss', 'valid_loss',
                          'train_top1_acc', 'train_top5_acc', 'valid_top1_acc', 'valid_top5_acc']
@@ -28,7 +29,7 @@ LOSS_ACC_STATE_FIELDS = ['epoch',
 
 class Iterator:
     def __init__(self, model, optimizer, lr_scheduler, num_classes, tag_name,
-                 device='cpu', store_weights=False, store_loss_acc_log=False,
+                 device='cpu', loss_function_name='CE', store_weights=False, store_loss_acc_log=False,
                  store_confusion_matrix=False, store_logits=False):
         self.model = model
         self.optimizer = optimizer
@@ -36,7 +37,7 @@ class Iterator:
         self.num_classes = num_classes
         self.device = device  # 'cpu', 'cuda:0', ...
         self.model.to(device)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = get_loss_function(loss_function_name)
         self.loader = {'train': None, 'valid': None, 'test': None}
         self.store_weights = store_weights
         self.store_loss_acc_log = store_loss_acc_log

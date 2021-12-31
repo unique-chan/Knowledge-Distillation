@@ -1,6 +1,9 @@
+import sys
+
 import torchvision.transforms as transforms
 import torch.optim as optim
-import sys
+import torch.nn as nn
+
 
 sys.path.append('src')  # Do not remove this code!
 
@@ -36,3 +39,19 @@ def get_optimizer(model, lr):
 
 def get_lr_scheduler(optimizer, lr_step, lr_step_gamma):
     return optim.lr_scheduler.MultiStepLR(optimizer, milestones=lr_step, gamma=lr_step_gamma)
+
+
+def get_loss_function(loss_function_name):
+    if loss_function_name is None:
+        return None
+    if loss_function_name == 'CE':  # default
+        return nn.CrossEntropyLoss()
+    # [Note]    if you want to use your own loss function,
+    #           add code as follows:
+    #           e.g.    elif loss_function__name == 'your_own_function_name':
+    #                       return your_own_function()
+    else:
+        print(f'[Warning] Invalid loss function name is given: "{loss_function_name}". '
+              'nn.CrossEntropyLoss() is returned instead. '
+              'Try to check whether the loss function name is correct.')
+        return nn.CrossEntropyLoss()

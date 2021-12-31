@@ -49,7 +49,7 @@ class Parser:
                                  help='store the training progress log in terms of loss and accuracy (*.csv)')
         self.parser.add_argument('--tag', type=str,
                                  help='tag name for current experiment')
-        self.parser.add_argument('--criterion', default='CE', type=str,
+        self.parser.add_argument('--loss_function', default='CE', type=str,
                                  help='loss function name (default: CE = Cross Entropy)')
 
     def add_arguments_for_test(self):
