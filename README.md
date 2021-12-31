@@ -49,8 +49,8 @@ python train.py --network_name='efficientnet_b0' --dataset_dir='cifar10' --epoch
 3. Run **test.py** for test. The below is an example. See **src/my_utils/parser.py** for details.
 ~~~ME
 python test.py --network_name='efficientnet_b0' --dataset_dir='cifar10' \
---auto_mean_std --store_weights --store_loss_acc_log --store_logits \
---store_confusion_matrix --checkpoint='pretrained_model_weights.pt'
+--auto_mean_std --store_logits --store_confusion_matrix \
+--checkpoint='pretrained_model_weights.pt'
 ~~~
 
 
