@@ -4,9 +4,9 @@ from warnings import filterwarnings
 
 import torch
 
-from src.my_utils import parser, util
+from src.my_utils import util
 from __init__ import *
-from src import loader, model, iterator
+from src import loader, model, iterator, parser
 
 ''' [Note]
 This code logic is similar to [train.py].
