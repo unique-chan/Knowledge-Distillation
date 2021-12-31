@@ -1,14 +1,16 @@
 import sys
+from platform import system
 
 import torchvision.transforms as transforms
 import torch.optim as optim
 import torch.nn as nn
 
-
 sys.path.append('src')  # Do not remove this code!
 
-LOG_DIR = './logs'       # directory name for storing *.pt & *.csv. (DO NOT INSERT '/' AT THE END OF LINE)
-NEWLINE = ''             # Recommendation: (for win) '\n' (for linux) ''
+LOG_DIR = './logs'  # directory name for storing *.pt & *.csv.
+# (DO NOT INSERT '/' AT THE END OF LINE)
+
+NEWLINE = '\n' if system == 'Windows' else ''  # Recommendation: (for win) '\n' (for linux) ''
 
 
 def get_manual_transform_list(mode, transform_list_name, mean, std):
