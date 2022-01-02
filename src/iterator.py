@@ -66,7 +66,7 @@ class Iterator:
             # [Goal] store confusion matrix if so far best during validation
             self.confusion_matrix_root_path = f'{LOG_DIR}/{self.tag_name}/cf_matrix'
             os.makedirs(self.confusion_matrix_root_path, exist_ok=True)
-        self.tb_writer = SummaryWriter(f'runs/{self.tag_name}') if bool_tb else None
+        self.tb_writer = SummaryWriter(f'{RUN_DIR}/{self.tag_name}') if bool_tb else None
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
