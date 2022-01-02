@@ -39,7 +39,8 @@ if __name__ == '__main__':
         else None
 
     # Iterator
-    my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, tag_name,
+    my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_args.lr_warmup_epochs,
+                                    my_loader.num_classes, tag_name,
                                     my_device, my_args.loss_function,
                                     my_args.store_weights, my_args.store_loss_acc_log,
                                     my_args.store_confusion_matrix, my_args.store_logits)

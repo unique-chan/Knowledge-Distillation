@@ -41,7 +41,7 @@ if __name__ == '__main__':
     my_device = 'cpu' if my_args.gpu_index == -1 else f'cuda:{my_args.gpu_index}'
 
     # Iterator
-    my_iterator = iterator.Iterator(my_model, None, None, my_loader.num_classes, tag_name,
+    my_iterator = iterator.Iterator(my_model, None, None, None, my_loader.num_classes, tag_name,
                                     my_device, None, None, None,
                                     my_args.store_confusion_matrix, my_args.store_logits)  # ⭐
     my_iterator.set_loader('test', my_test_loader)  # ⭐

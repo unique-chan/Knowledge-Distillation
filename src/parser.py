@@ -45,6 +45,9 @@ class Parser:
         self.parser.add_argument('--lr_step_gamma', type=float,
                                  help='learning rate step decay gamma '
                                       'e.g. --lr_step_gamma=0.5')
+        self.parser.add_argument('--lr_warmup_epochs', default=0, type=int,
+                                 help='epochs for learning rate warming-up'
+                                      'e.g. --lr_warmup_epochs=5')
         self.parser.add_argument('--store_weights', action='store_true',
                                  help='store the best model weights (*.pt) during training')
         self.parser.add_argument('--store_loss_acc_log', action='store_true',

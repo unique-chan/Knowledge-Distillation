@@ -4,7 +4,7 @@ import os
 import torch
 import torch.nn as nn
 
-from src.my_utils import util
+from src.my_utils import util, warmup_schduler
 from __init__ import *
 
 try:
@@ -21,24 +21,25 @@ except ImportError:
     bool_tb = False
     print('[Warning] Try to install tensorboard for checking the status of learning.')
 
-
 LOSS_ACC_STATE_FIELDS = ['epoch',
                          'train_loss', 'valid_loss',
                          'train_top1_acc', 'train_top5_acc', 'valid_top1_acc', 'valid_top5_acc']
 
 
 class Iterator:
-    def __init__(self, model, optimizer, lr_scheduler, num_classes, tag_name,
+    def __init__(self, model, optimizer, lr_scheduler, lr_warmup_epochs, num_classes, tag_name,
                  device='cpu', loss_function_name='CE', store_weights=False, store_loss_acc_log=False,
                  store_confusion_matrix=False, store_logits=False):
         self.model = model
         self.optimizer = optimizer
+        self.loader = {'train': None, 'valid': None, 'test': None}
         self.lr_scheduler = lr_scheduler
+        self.lr_warmup_epochs = lr_warmup_epochs
+        self.lr_warmup_scheduler = warmup_schduler.WarmUpLR(optimizer) if lr_warmup_epochs > 0 else None
         self.num_classes = num_classes
         self.device = device  # 'cpu', 'cuda:0', ...
         self.model.to(device)
-        self.criterion = get_loss_function(loss_function_name)
-        self.loader = {'train': None, 'valid': None, 'test': None}
+        self.criterion = get_loss_function(loss_function_name, device)
         self.store_weights = store_weights
         self.store_loss_acc_log = store_loss_acc_log
         self.store_confusion_matrix = store_confusion_matrix
@@ -70,46 +71,38 @@ class Iterator:
 
     def set_loader(self, mode, loader):
         self.loader[mode] = loader
+        if mode == 'train' and self.lr_warmup_scheduler:
+            self.lr_warmup_scheduler.set_total_iters(len(loader) * self.lr_warmup_epochs)
 
     def one_epoch(self, mode, cur_epoch):
         loader = self.loader[mode]
         meter = {'loss': util.Meter(), 'top1_acc': util.Meter(), 'top5_acc': util.Meter()}
         assert loader, f"No loader['{mode}'] exists. Pass the loader to the Iterator via set_loader()."
         tqdm_loader = tqdm.tqdm(loader, mininterval=0.1) if bool_tqdm else loader
-        img_paths = []   # set of image(x) paths
-        y_trues = []   # set of ground_truth
-        y_preds = []   # set of prediction (classification result)
-        y_dists = []   # set of predicted distribution
+        img_paths = []  # set of image(x) paths
+        y_trues = []  # set of ground_truth
+        y_preds = []  # set of prediction (classification result)
+        y_dists = []  # set of predicted distribution
         for (img_path, x, y) in tqdm_loader:
             x, y = x.to(self.device), y.to(self.device)
             # predict
             y_dist = self.model(x)
             y_pred, [top1_acc, top5_acc] = \
                 Iterator.__get_final_classification_results_and_topk_acc__(y_dist, y, top_k=(1, 5))
-            meter['top1_acc'].update(top1_acc.item(), k=y_dist.size(0))
-            meter['top5_acc'].update(top5_acc.item(), k=y_dist.size(0))
             # calculate loss
             if mode in ['train', 'valid']:
                 loss = self.criterion(y_dist, y)
-                meter['loss'].update(loss.item(), k=y_dist.size(0))
-                log_msg = f"Loss: {meter['loss'].avg:.3f} | Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% " \
-                          f"(top5) {meter['top5_acc'].avg * 100.:.2f}% "
-                # update
                 if mode == 'train':
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-                    self.lr_scheduler.step()
-            else:
-                log_msg = f"Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% (top5) {meter['top5_acc'].avg * 100.:.2f}%"
-            # accumulate the prediction results
+                    self.__optimize_model(cur_epoch, loss)
+            # to store logits or confusion matrix, accumulate the prediction results!
             if self.store_logits or self.store_confusion_matrix:
-                img_paths.extend(img_path)
-                y_trues.extend(y.data.cpu().numpy())
-                y_preds.extend(torch.flatten(y_pred).tolist())
-                y_dists.extend([logit.tolist() for logit in y_dist.cpu().detach().numpy()])
+                Iterator.__accumulate_predictions(img_path, img_paths, y, y_dist, y_dists, y_pred, y_preds, y_trues)
+            # to print the log!
+            if self.store_loss_acc_log:
+                Iterator.__update_all_meters(loss if mode in ['train', 'valid'] else None,
+                                             meter, top1_acc, top5_acc, k=y_dist.size(0))
             if bool_tqdm:
-                tqdm_loader.set_description(f'{mode.upper()} | {cur_epoch + 1:>5d} | {log_msg}')
+                self.__print_tqdm_log(cur_epoch, meter, mode, tqdm_loader)
         return meter['loss'].avg, meter['top1_acc'].avg * 100., meter['top5_acc'].avg * 100., \
                img_paths, y_trues, y_preds, y_dists
 
@@ -177,6 +170,45 @@ class Iterator:
         top_k_acc_list = [correct[:k].reshape(-1).float().sum(0, keepdim=True) for k in top_k]
         _, top_1_prediction = out.topk(k=1, dim=1, largest=True, sorted=True)
         return top_1_prediction, top_k_acc_list  # sum of correct predictions (top_1, top_k)
+
+    @classmethod
+    def __accumulate_predictions(cls, img_path, img_paths, y, y_dist, y_dists, y_pred, y_preds, y_trues):
+        img_paths.extend(img_path)
+        y_trues.extend(y.data.cpu().numpy())
+        y_preds.extend(torch.flatten(y_pred).tolist())
+        y_dists.extend([logit.tolist() for logit in y_dist.cpu().detach().numpy()])
+
+    @classmethod
+    def __update_all_meters(cls, loss, meter, top1_acc, top5_acc, k):
+        meter['top1_acc'].update(top1_acc.item(), k=k)
+        meter['top5_acc'].update(top5_acc.item(), k=k)
+        if loss:
+            meter['loss'].update(loss.item(), k=k)
+
+    def __print_tqdm_log(self, cur_epoch, meter, mode, tqdm_loader):
+        if mode in 'train':
+            log_msg = f"Loss: {meter['loss'].avg:.3f} " \
+                      f"| Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% " \
+                      f"(top5) {meter['top5_acc'].avg * 100.:.2f}% " + \
+                      (f"[top1-best-val: {self.best_valid_acc_state['top1_acc']:.2f}%]"
+                       if cur_epoch > 0 else '')
+        elif mode in 'valid':
+            log_msg = f"Loss: {meter['loss'].avg:.3f} " \
+                      f"| Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% " \
+                      f"(top5) {meter['top5_acc'].avg * 100.:.2f}% "
+        else:  # mode == 'test'
+            log_msg = f"Acc: (top1) {meter['top1_acc'].avg * 100.:.2f}% " \
+                      f"(top5) {meter['top5_acc'].avg * 100.:.2f}%"
+        tqdm_loader.set_description(f'{mode.upper()} | {cur_epoch + 1:>5d} | {log_msg}')
+
+    def __optimize_model(self, cur_epoch, loss):
+        # lr-warmup
+        if self.lr_warmup_scheduler and cur_epoch < self.lr_warmup_epochs:
+            self.lr_warmup_scheduler.step()
+        # optimization
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
     def __update_best_valid_acc_state(self, top1_acc, top5_acc):
         if top1_acc > self.best_valid_acc_state['top1_acc'] or \
