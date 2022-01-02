@@ -42,12 +42,13 @@ def store_setup_txt(path, my_args):
 
 
 def create_confusion_matrix(y_trues, y_preds, num_of_classes,
-                            class_names=None, threshold=15, figsize=(8, 6), cmap=plt.cm.Blues):
+                            class_names=None, threshold=15, figsize=(8, 6), cmap=plt.cm.Blues, title=''):
     cf_matrix = confusion_matrix(y_trues, y_preds)
     normalized_cf_matrix = cf_matrix / np.sum(cf_matrix) * num_of_classes
     # normalized_cf_matrix = cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis]
 
     fig = plt.figure(figsize=figsize)
+    plt.title(title)
     plt.imshow(normalized_cf_matrix, interpolation='nearest', cmap=cmap)
     plt.colorbar()
 

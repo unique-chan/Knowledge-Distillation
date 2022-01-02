@@ -256,7 +256,10 @@ class Iterator:
         class_names = self.loader[mode].dataset.class_names  # only valid when using src/dataset.py
         plot_cf_matrix = util.create_confusion_matrix(y_trues, y_preds,
                                                       num_of_classes=len(class_names),
-                                                      class_names=class_names)
+                                                      class_names=class_names,
+                                                      title=f"best-val "
+                                                            f"[top1] {self.best_valid_acc_state['top1_acc']: .2f}% "
+                                                            f"[top5] {self.best_valid_acc_state['top5_acc']: .2f}%")
         if self.tb_writer and mode != 'test':
             self.tb_writer.add_figure('Confusion Matrix', plot_cf_matrix, cur_epoch)
         file_name = f'{mode}-epoch-{cur_epoch}.svg' if cur_epoch > -1 else f'{mode}.svg'
