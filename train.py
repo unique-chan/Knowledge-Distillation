@@ -24,7 +24,7 @@ if __name__ == '__main__':
     my_loader = loader.Loader(my_args.dataset_dir, my_args.batch_size,
                               my_args.mean, my_args.std,
                               my_args.auto_mean_std,  # if my_args.auto_mean_std is True,
-                                                      # my_args.mean, my_args.std become ignored.
+                              # my_args.mean, my_args.std become ignored.
                               my_args.transform_list_name)
     my_train_loader = my_loader.get_loader(mode='train', shuffle=True)
     my_valid_loader = my_loader.get_loader(mode='valid', shuffle=False)
@@ -32,8 +32,11 @@ if __name__ == '__main__':
     # Initialization
     my_model = model.model(my_args.network_name, my_loader.num_classes, pretrained=False)
     my_device = 'cpu' if my_args.gpu_index == -1 else f'cuda:{my_args.gpu_index}'
-    my_optimizer = get_optimizer(my_model, my_args.lr)                                        # see '__init__.py'
-    my_lr_scheduler = get_lr_scheduler(my_optimizer, my_args.lr_step, my_args.lr_step_gamma)  # see '__init__.py'
+    # see '__init__.py' for my_optimizer & get_lr_scheduler
+    my_optimizer = get_optimizer(my_model, my_args.lr)
+    my_lr_scheduler = get_lr_scheduler(my_optimizer, my_args.lr_step, my_args.lr_step_gamma) \
+        if my_args.lr_step \
+        else None
 
     # Iterator
     my_iterator = iterator.Iterator(my_model, my_optimizer, my_lr_scheduler, my_loader.num_classes, tag_name,
@@ -51,6 +54,6 @@ if __name__ == '__main__':
     if my_args.store_weights:
         my_iterator.store_model()
 
-    util.store_txt(f'{LOG_DIR}/{tag_name}/setup.txt', my_args)
+    util.store_setup_txt(f'{LOG_DIR}/{tag_name}/setup-train-val.txt', my_args)
 
     print(f'{tag_name} experiment has been done.')

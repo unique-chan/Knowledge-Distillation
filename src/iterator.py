@@ -118,7 +118,9 @@ class Iterator:
         self.model.train()
         loss, top1_acc, top5_acc, img_paths, y_trues, y_preds, y_dists = \
             self.one_epoch(mode=mode, cur_epoch=cur_epoch)
-        self.lr_scheduler.step()
+        if self.lr_scheduler:
+            self.lr_scheduler.step()
+        # for logging ->
         if self.store_loss_acc_log:
             self.__update_loss_acc_state(mode, cur_epoch, loss, top1_acc, top5_acc)
             if self.tb_writer:
@@ -135,6 +137,7 @@ class Iterator:
             loss, top1_acc, top5_acc, img_paths, y_trues, y_preds, y_dists = \
                 self.one_epoch(mode=mode, cur_epoch=cur_epoch)
         is_best_valid = self.__update_best_valid_acc_state(top1_acc, top5_acc)
+        # for logging ->
         if self.store_weights:
             self.best_model_state_dict = self.model.state_dict()
         if self.store_loss_acc_log:
@@ -157,6 +160,7 @@ class Iterator:
             _, top1_acc, top5_acc, img_paths, y_trues, y_preds, y_dists = \
                 self.one_epoch(mode=mode, cur_epoch=-1)
         print(f'➜ top1_acc: {top1_acc: .2f}%, top5_acc: {top5_acc: .2f}%')
+        # for logging ->
         if self.store_logits:
             self.__write_csv_logits(mode, -1, img_paths, y_preds, y_dists)
         if self.store_confusion_matrix:

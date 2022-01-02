@@ -39,10 +39,12 @@ class Parser:
                                  help='initial learning rate (default: 0.1)')
         self.parser.add_argument('--epochs', default=1, type=int,
                                  help='epochs (default: 1)')
-        self.parser.add_argument('--lr_step', default="[100, 150]", type=str,
-                                 help='learning rate step decay milestones (default: "[100, 150]")')
-        self.parser.add_argument('--lr_step_gamma', default=0.1, type=float,
-                                 help='learning rate step decay gamma (default: 0.1)')
+        self.parser.add_argument('--lr_step', type=str,
+                                 help='learning rate step decay milestones (default: None) '
+                                      'e.g. --lr_step="[60, 80, 120]"')
+        self.parser.add_argument('--lr_step_gamma', type=float,
+                                 help='learning rate step decay gamma '
+                                      'e.g. --lr_step_gamma=0.5')
         self.parser.add_argument('--store_weights', action='store_true',
                                  help='store the best model weights (*.pt) during training')
         self.parser.add_argument('--store_loss_acc_log', action='store_true',
