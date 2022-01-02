@@ -30,9 +30,14 @@ def fix_random_seed(seed=1234):
     backends.cudnn.deterministic = True
 
 
-def store_txt(path, txt):
+def store_setup_txt(path, my_args):
+    arg_keys = list(filter(lambda x: x[0] != '_', dir(my_args)))
+    if my_args.auto_mean_std:
+        arg_keys.remove('mean')
+        arg_keys.remove('std')
     with open(path, 'w') as f:
-        f.write(str(txt))
+        for arg_key in arg_keys:
+            f.write(f'{arg_key}: {my_args.__getattribute__(f"{arg_key}")} \n')
         f.flush()
 
 
