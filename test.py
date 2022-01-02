@@ -49,6 +49,6 @@ if __name__ == '__main__':
     # Test
     my_iterator.test()  # ⭐⭐⭐
 
-    util.store_txt(f'{LOG_DIR}/{tag_name}/setup.txt', my_args)
+    util.store_setup_txt(f'{LOG_DIR}/{tag_name}/setup-test.txt', my_args)
 
     print(f'{tag_name} experiment has been done.')
