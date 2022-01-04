@@ -7,8 +7,7 @@ import torch.nn as nn
 
 sys.path.append('src')  # Do not remove this code!
 
-LOG_DIR = 'logs'  # directory name for storing *.pt & *.csv.
-RUN_DIR = 'runs'  # directory name for storing log info on tensorboard.
+RUN_DIR = 'runs'  # directory name for storing *.pt & *.csv. & storing log info on tensorboard.
 # (DO NOT INSERT '/' AT THE END OF LINE)
 
 NEWLINE = '\n' if system == 'Windows' else ''  # Recommendation: (for win) '\n' (for linux) ''
@@ -49,6 +48,10 @@ def get_loss_function(loss_function_name, device):
         return None
     if loss_function_name == 'CE':  # default
         return nn.CrossEntropyLoss()
+        
+    elif loss_function_name == 'CCE':  # complement cross entropy (PRL)
+        from src.my_criterion.cce import CCE
+        return CCE(device, balancing_factor=1)
     # [Note]    if you want to use your own loss function,
     #           add code as follows:
     #           e.g.    elif loss_function__name == 'your_own_function_name':
